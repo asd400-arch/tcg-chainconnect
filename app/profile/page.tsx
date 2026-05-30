@@ -1,15 +1,33 @@
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+'use client'
 
-export const dynamic = "force-dynamic";
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 
-export default async function MyProfilePage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+export default function MyProfilePage() {
+  const router = useRouter()
 
-  if (!user) redirect("/auth/login");
+  useEffect(() => {
+    async function redirectToProfile() {
+      const supabase = createClient()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
 
-  redirect(`/profile/${user.id}`);
+      if (!user) {
+        router.replace('/auth/login')
+        return
+      }
+
+      router.replace(`/profile/${user.id}`)
+    }
+
+    redirectToProfile()
+  }, [router])
+
+  return (
+    <div className="cc-container py-16 text-center text-sm text-gray-500">
+      프로필 불러오는 중...
+    </div>
+  )
 }

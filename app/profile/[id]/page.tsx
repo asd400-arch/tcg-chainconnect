@@ -1,205 +1,177 @@
-import Link from "next/link";
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
-import { ProfileAvatar } from "@/components/profile/ProfileAvatar";
-import { TierBadge } from "@/components/profile/TierBadge";
-import { isKoreanCompany } from "@/lib/profile";
+'use client'
 
-export const dynamic = "force-dynamic";
+import { useEffect, useState } from 'react'
+import Link from 'next/link'
+import { useParams, useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
+import { getInitials } from '@/lib/profile'
 
-export default async function ProfilePage(props: PageProps<"/profile/[id]">) {
-  const params = await props.params;
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+type Profile = {
+  id: string
+  full_name: string | null
+  headline: string | null
+  company: string | null
+  country: string | null
+  industry: string | null
+  job_level: string | null
+  bio: string | null
+  linkedin_url: string | null
+  avatar_url: string | null
+}
 
-  if (!user) redirect("/auth/login");
+export default function ProfileByIdPage() {
+  const params = useParams<{ id: string }>()
+  const router = useRouter()
+  const [profile, setProfile] = useState<Profile | null>(null)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [notFound, setNotFound] = useState(false)
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select(
-      "id, full_name, headline, company, country, industry, job_level, bio, linkedin_url, avatar_url, tier, created_at",
-    )
-    .eq("id", params.id)
-    .maybeSingle();
+  useEffect(() => {
+    async function loadProfile() {
+      const supabase = createClient()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
 
-  if (!profile) {
+      if (!user) {
+        router.replace('/auth/login')
+        return
+      }
+
+      setCurrentUserId(user.id)
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .select(
+          'id, full_name, headline, company, country, industry, job_level, bio, linkedin_url, avatar_url',
+        )
+        .eq('id', params.id)
+        .maybeSingle()
+
+      if (error || !data) {
+        setNotFound(true)
+      } else {
+        setProfile(data as Profile)
+      }
+
+      setLoading(false)
+    }
+
+    loadProfile()
+  }, [params.id, router])
+
+  if (loading) {
     return (
-        <div className="cc-container py-10">
-          <div className="cc-card p-8 text-center">
-            <h1 className="text-2xl font-bold text-[color:var(--text)]">
-              프로필을 찾을 수 없습니다
-            </h1>
-            <p className="mt-2 text-sm text-gray-500">
-              해당 프로필이 존재하지 않거나 삭제되었습니다.
-            </p>
-            <Link
-              href="/dashboard"
-              className="mt-6 inline-block text-sm font-semibold text-[color:var(--navy)] hover:underline"
-            >
-              대시보드로 돌아가기
-            </Link>
-          </div>
-        </div>
-    );
+      <div className="cc-container py-16 text-center text-sm text-gray-500">
+        프로필 불러오는 중...
+      </div>
+    )
   }
 
-  const isOwnProfile = user.id === profile.id;
-  const showKoreanBadge = isKoreanCompany(profile.company);
+  if (notFound || !profile) {
+    return (
+      <div className="cc-container py-10">
+        <div className="cc-card p-8 text-center">
+          <h1 className="text-2xl font-bold text-[#1A1A2E]">
+            프로필을 찾을 수 없습니다
+          </h1>
+          <Link
+            href="/dashboard"
+            className="mt-4 inline-block text-sm font-semibold text-[#0F4C81] hover:underline"
+          >
+            대시보드로 돌아가기
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  const isOwnProfile = currentUserId === profile.id
 
   return (
-      <div className="cc-container py-8">
-        {/* Header Card */}
-        <div className="cc-card overflow-hidden">
-          <div className="h-24 bg-gradient-to-r from-[color:var(--navy)] to-[#0b3b67]" />
-          <div className="px-6 pb-6">
-            <div className="-mt-12 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
-                <ProfileAvatar
-                  name={profile.full_name}
-                  avatarUrl={profile.avatar_url}
-                  size="xl"
-                />
-                <div className="pb-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h1 className="text-2xl font-black text-[color:var(--text)] sm:text-3xl">
-                      {profile.full_name ?? "이름 없음"}
-                    </h1>
-                    <TierBadge tier={profile.tier} />
-                  </div>
-                  {profile.headline ? (
-                    <p className="mt-1 text-base text-gray-600">
-                      {profile.headline}
-                    </p>
-                  ) : null}
-                  <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-gray-500">
-                    {profile.company ? <span>{profile.company}</span> : null}
-                    {profile.company && profile.country ? (
-                      <span>·</span>
-                    ) : null}
-                    {profile.country ? <span>{profile.country}</span> : null}
-                    {profile.job_level ? (
-                      <>
-                        <span>·</span>
-                        <span>{profile.job_level}</span>
-                      </>
-                    ) : null}
-                  </div>
-                  {showKoreanBadge ? (
-                    <span className="mt-3 inline-flex items-center rounded-full bg-[color:var(--navy)] px-3 py-1 text-xs font-bold text-white">
-                      한국 기업 전문가
-                    </span>
-                  ) : null}
-                </div>
+    <div className="cc-container py-8">
+      <div className="cc-card p-6 sm:p-8">
+        <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex gap-5">
+            {profile.avatar_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={profile.avatar_url}
+                alt={profile.full_name ?? '프로필'}
+                className="h-24 w-24 rounded-full object-cover ring-4 ring-[#0F4C81]/10"
+              />
+            ) : (
+              <div className="flex h-24 w-24 items-center justify-center rounded-full bg-[#0F4C81] text-2xl font-bold text-white ring-4 ring-[#0F4C81]/10">
+                {getInitials(profile.full_name)}
               </div>
+            )}
 
-              <div className="flex flex-col gap-3 sm:items-end">
-                <div className="flex gap-6 text-center text-sm">
-                  <div>
-                    <div className="font-black text-[color:var(--navy)]">0</div>
-                    <div className="text-gray-500">연결</div>
-                  </div>
-                  <div>
-                    <div className="font-black text-[color:var(--navy)]">0</div>
-                    <div className="text-gray-500">팔로워</div>
-                  </div>
-                </div>
-                {isOwnProfile ? (
-                  <Link
-                    href="/profile/edit"
-                    className="inline-flex items-center justify-center rounded-full border border-[color:var(--navy)] px-6 py-2.5 text-sm font-bold text-[color:var(--navy)] transition hover:bg-[color:var(--navy)] hover:text-white"
-                  >
-                    프로필 수정
-                  </Link>
-                ) : (
-                  <button
-                    type="button"
-                    className="inline-flex items-center justify-center rounded-full bg-[color:var(--navy)] px-6 py-2.5 text-sm font-bold text-white transition hover:opacity-90"
-                  >
-                    연결하기
-                  </button>
-                )}
+            <div>
+              <h1 className="text-2xl font-black text-[#1A1A2E] sm:text-3xl">
+                {profile.full_name ?? '이름 없음'}
+              </h1>
+              {profile.headline ? (
+                <p className="mt-1 text-base text-gray-600">{profile.headline}</p>
+              ) : null}
+              <div className="mt-3 flex flex-wrap gap-2 text-sm text-gray-500">
+                {profile.company ? (
+                  <span className="rounded-full bg-gray-100 px-3 py-1">
+                    {profile.company}
+                  </span>
+                ) : null}
+                {profile.country ? (
+                  <span className="rounded-full bg-gray-100 px-3 py-1">
+                    {profile.country}
+                  </span>
+                ) : null}
+                {profile.industry ? (
+                  <span className="rounded-full bg-gray-100 px-3 py-1">
+                    {profile.industry}
+                  </span>
+                ) : null}
+                {profile.job_level ? (
+                  <span className="rounded-full bg-[#0F4C81]/10 px-3 py-1 font-semibold text-[#0F4C81]">
+                    {profile.job_level}
+                  </span>
+                ) : null}
               </div>
             </div>
           </div>
+
+          {isOwnProfile ? (
+            <Link
+              href="/profile/edit"
+              className="inline-flex items-center justify-center rounded-full border-2 border-[#0F4C81] px-6 py-2.5 text-sm font-bold text-[#0F4C81] transition hover:bg-[#0F4C81] hover:text-white"
+            >
+              프로필 수정
+            </Link>
+          ) : null}
         </div>
 
-        <div className="mt-6 grid gap-6 lg:grid-cols-3">
-          <div className="space-y-6 lg:col-span-2">
-            <ProfileSection title="소개">
-              {profile.bio ? (
-                <p className="whitespace-pre-wrap text-sm leading-7 text-gray-700">
-                  {profile.bio}
-                </p>
-              ) : (
-                <EmptyState text="아직 소개가 없습니다." />
-              )}
-            </ProfileSection>
-
-            <ProfileSection title="경력">
-              <EmptyState text="아직 등록된 경력이 없습니다." />
-            </ProfileSection>
-
-            <ProfileSection title="학력">
-              <EmptyState text="아직 등록된 학력이 없습니다." />
-            </ProfileSection>
+        {profile.bio ? (
+          <div className="mt-8 border-t border-gray-100 pt-6">
+            <h2 className="text-sm font-bold text-[#0F4C81]">소개</h2>
+            <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-gray-700">
+              {profile.bio}
+            </p>
           </div>
+        ) : null}
 
-          <div className="space-y-6">
-            <ProfileSection title="스킬">
-              <EmptyState text="아직 등록된 스킬이 없습니다." />
-            </ProfileSection>
-
-            <ProfileSection title="자격증">
-              <EmptyState text="아직 등록된 자격증이 없습니다." />
-            </ProfileSection>
-
-            {profile.linkedin_url ? (
-              <ProfileSection title="LinkedIn">
-                <a
-                  href={profile.linkedin_url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-2 text-sm font-semibold text-[color:var(--navy)] hover:underline"
-                >
-                  LinkedIn 프로필 보기 →
-                </a>
-              </ProfileSection>
-            ) : null}
-
-            {profile.industry ? (
-              <ProfileSection title="업종">
-                <p className="text-sm font-medium text-gray-700">
-                  {profile.industry}
-                </p>
-              </ProfileSection>
-            ) : null}
+        {profile.linkedin_url ? (
+          <div className="mt-6 border-t border-gray-100 pt-6">
+            <h2 className="text-sm font-bold text-[#0F4C81]">LinkedIn</h2>
+            <a
+              href={profile.linkedin_url}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-2 inline-block text-sm font-semibold text-[#0F4C81] hover:underline"
+            >
+              {profile.linkedin_url}
+            </a>
           </div>
-        </div>
+        ) : null}
       </div>
-  );
-}
-
-function ProfileSection({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="cc-card p-6">
-      <h2 className="text-lg font-bold text-[color:var(--text)]">{title}</h2>
-      <div className="mt-4">{children}</div>
-    </section>
-  );
-}
-
-function EmptyState({ text }: { text: string }) {
-  return (
-    <p className="rounded-xl bg-gray-50 px-4 py-6 text-center text-sm text-gray-400">
-      {text}
-    </p>
-  );
+    </div>
+  )
 }
