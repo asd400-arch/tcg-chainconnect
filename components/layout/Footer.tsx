@@ -7,8 +7,8 @@ export function Footer() {
         <div className="flex flex-col gap-8 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <div className="text-base font-semibold tracking-tight">
-              <span className="text-[color:var(--cc-primary)]">Kol</span>
-              <span className="text-[color:var(--cc-accent)]">inked</span>
+              <span className="font-bold text-[color:var(--navy)]">Ko</span>
+              <span className="font-bold text-[color:var(--red)]">linked</span>
             </div>
             <div className="mt-2 text-sm text-black/60">
               Korea-Connected Professional Network

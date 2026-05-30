@@ -8,8 +8,8 @@ function cx(...classes: Array<string | undefined | false>) {
 
 const variants: Record<Variant, string> = {
   comingSoon: "bg-black/5 text-black/60 ring-1 ring-black/10",
-  new: "bg-[color:var(--cc-accent)] text-white",
-  koreanCompany: "bg-[color:var(--cc-primary)] text-white",
+  new: "bg-[color:var(--red)] text-white",
+  koreanCompany: "bg-[color:var(--navy)] text-white",
   pro: "bg-[#C9A227] text-[#1A1A2E]",
 };
 

@@ -1,47 +1,46 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 :root {
-  --cc-primary: #0f4c81;
-  --cc-accent: #e63946;
-  --cc-bg: #f8f9fa;
-  --cc-text: #1a1a2e;
-
-  --background: var(--cc-bg);
-  --foreground: var(--cc-text);
+  --navy: #0F4C81;
+  --red: #E63946;
+  --bg: #F8F9FA;
+  --text: #1A1A2E;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-cc-primary: var(--cc-primary);
-  --color-cc-accent: var(--cc-accent);
-  --color-cc-bg: var(--cc-bg);
-  --color-cc-text: var(--cc-text);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0b1220;
-    --foreground: #f3f4f6;
-  }
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system,
-    "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", "Segoe UI",
-    Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  background-color: var(--bg);
+  color: var(--text);
 }
 
 .cc-container {
-  @apply mx-auto w-full max-w-6xl px-4 sm:px-6;
+  width: 100%;
+  max-width: 72rem; /* ~ max-w-6xl */
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem; /* px-4 */
+  padding-right: 1rem;
+}
+
+@media (min-width: 640px) {
+  .cc-container {
+    padding-left: 1.5rem; /* sm:px-6 */
+    padding-right: 1.5rem;
+  }
 }
 
 .cc-card {
-  @apply rounded-2xl border border-black/5 bg-white shadow-sm;
+  border-radius: 1rem; /* rounded-2xl */
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
 }
 
 .cc-shimmer {

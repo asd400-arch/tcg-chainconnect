@@ -18,7 +18,7 @@ export function ComingSoonCard({
         <div className="text-2xl">{icon}</div>
         <Badge variant="comingSoon">Coming Soon</Badge>
       </div>
-      <div className="mt-4 text-lg font-semibold tracking-tight text-[color:var(--cc-primary)]">
+      <div className="mt-4 text-lg font-semibold tracking-tight text-[color:var(--navy)]">
         {title}
       </div>
       <p className="mt-2 text-sm leading-6 text-black/60">{description}</p>

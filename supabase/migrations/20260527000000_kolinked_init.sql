@@ -6,6 +6,8 @@ create table profiles (
   company text,
   country text,
   industry text,
+  job_level text,
+  bio text,
   linkedin_url text,
   avatar_url text,
   tier text default 'free',
@@ -55,8 +57,13 @@ create policy "Auth users can post jobs" on jobs for insert with check (auth.uid
 create or replace function public.handle_new_user()
 returns trigger as $$
 begin
-  insert into public.profiles (id, full_name)
-  values (new.id, new.raw_user_meta_data->>'full_name');
+  insert into public.profiles (id, full_name, country, industry)
+  values (
+    new.id,
+    new.raw_user_meta_data->>'full_name',
+    new.raw_user_meta_data->>'country',
+    new.raw_user_meta_data->>'industry'
+  );
   return new;
 end;
 $$ language plpgsql security definer;
